@@ -26,6 +26,7 @@ jobs:
     steps:
     - name: Determine release tag and version
       id: set
+      shell: bash
       run: |
         if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
           TAG="${{ github.event.inputs.tag }}"
