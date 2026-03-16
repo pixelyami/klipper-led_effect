@@ -68,15 +68,12 @@ jobs:
     needs: prepare
     runs-on: ubuntu-latest
     steps:
-    - name: Create GitHub release (gh)
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      run: |
-        TAG="${{ needs.prepare.outputs.release_tag }}"
-        RELEASE_NAME="${{ github.event.inputs.release_name || format('Release %s', needs.prepare.outputs.release_tag) }}"
-        gh auth setup-git
-        gh release create "$TAG" --title "$RELEASE_NAME" --notes "Release $TAG" --repo "$GITHUB_REPOSITORY"
+    - name: Draft release notes with release-drafter
+      id: drafter
+      uses: release-drafter/release-drafter@v7
+      with:
+        tag: ${{ needs.prepare.outputs.release_tag }}
+        publish: false
 
   build:
     name: Build packages
@@ -174,4 +171,4 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: |
         gh auth setup-git
-        gh release upload "${{ needs.prepare.outputs.release_tag }}" "simulator/dist/${{ env.OUT_FILE_NAME }}" --clobber --repo "$GITHUB_REPOSITORY"
+        gh release upload "$RELEASE_TAG" "simulator/dist/$OUT_FILE_NAME" --clobber --repo "$GITHUB_REPOSITORY"
