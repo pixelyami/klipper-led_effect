@@ -70,7 +70,7 @@ jobs:
       uses: release-drafter/release-drafter@v7
       with:
         tag: ${{ needs.prepare.outputs.release_tag }}
-        publish: true
+        publish: false
     - name: Output Release URL File
       run: echo "${{ steps.drafter.outputs.upload_url }}" > release_url.txt
     - name: Save Release URL File for publish
@@ -85,7 +85,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-      RELEASE_VERSION: ${{ needs.prepare.outputs.release_version }}
     strategy:
       matrix:
         include:
@@ -95,7 +94,6 @@ jobs:
               pyinstaller -F -w -n ledeffect-simulator-macos -p .. app.py &&
               cd dist/ &&
               zip -r9 ledeffect-simulator-macos-${RELEASE_VERSION}.zip ledeffect-simulator-macos.app
-            OUT_FILE_NAME: ledeffect-simulator-macos-${RELEASE_VERSION}.zip
             ASSET_MIME: application/zip
             POETRY_FOLDER: ~/.local
           - os: windows-latest
@@ -103,13 +101,20 @@ jobs:
             CMD_BUILD: >
               pyinstaller -F -w -n ledeffect-simulator-win -p .. app.py &&
               mv dist/ledeffect-simulator-win.exe dist/ledeffect-simulator-win-${RELEASE_VERSION}.exe
-            OUT_FILE_NAME: ledeffect-simulator-win-${RELEASE_VERSION}.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
             POETRY_FOLDER: C:\Users\runneradmin\.local
     steps:
     - uses: actions/checkout@v6
       with:
         ref: ${{ needs.prepare.outputs.release_tag }}
+
+    - name: Set release version
+      id: set_release_version
+      shell: bash
+      run: |
+        TAG="${{ needs.prepare.outputs.release_tag }}"
+        RELEASE_VERSION="${TAG#v}"
+        echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
 
     - name: Set up Python 3.14
       uses: actions/setup-python@v6
@@ -135,6 +140,7 @@ jobs:
       run: ${{matrix.POETRY_FOLDER}}/bin/poetry install --no-interaction
     - name: Build with pyinstaller for ${{matrix.TARGET}}
       working-directory: ./simulator
+      shell: bash
       run: ${{matrix.POETRY_FOLDER}}/bin/poetry run ${{matrix.CMD_BUILD}}
     - name: Load Release URL File from release job
       uses: actions/download-artifact@v8
@@ -148,6 +154,7 @@ jobs:
         echo "upload_url=$value" >> $GITHUB_OUTPUT
     - name: Set asset filename
       id: set_asset_file
+      shell: bash
       run: |
         if [ "${{ matrix.TARGET }}" = "macos" ]; then
           OUT_FILE=ledeffect-simulator-macos-${RELEASE_VERSION}.zip
