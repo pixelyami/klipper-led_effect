@@ -95,25 +95,32 @@ jobs:
               cd dist/ &&
               zip -r9 ledeffect-simulator-macos-${RELEASE_VERSION}.zip ledeffect-simulator-macos.app
             ASSET_MIME: application/zip
-            POETRY_FOLDER: ~/.local
           - os: windows-latest
             TARGET: windows
             CMD_BUILD: >
               pyinstaller -F -w -n ledeffect-simulator-win -p .. app.py &&
               mv dist/ledeffect-simulator-win.exe dist/ledeffect-simulator-win-${RELEASE_VERSION}.exe
             ASSET_MIME: application/vnd.microsoft.portable-executable
-            POETRY_FOLDER: C:\Users\runneradmin\.local
     steps:
     - uses: actions/checkout@v6
       with:
         ref: ${{ needs.prepare.outputs.release_tag }}
 
-    - name: Set release version
+    - name: Set release tag and version
       id: set_release_version
       shell: bash
       run: |
-        TAG="${{ needs.prepare.outputs.release_tag }}"
+        if [ "${GITHUB_EVENT_NAME}" = "workflow_dispatch" ]; then
+          TAG="${{ github.event.inputs.tag }}"
+        else
+          TAG="${GITHUB_REF##*/}"
+        fi
+        if [ -z "$TAG" ]; then
+          echo "ERROR: release tag is empty" >&2
+          exit 1
+        fi
         RELEASE_VERSION="${TAG#v}"
+        echo "RELEASE_TAG=$TAG" >> $GITHUB_ENV
         echo "RELEASE_VERSION=$RELEASE_VERSION" >> $GITHUB_ENV
 
     - name: Set up Python 3.14
@@ -133,15 +140,17 @@ jobs:
 
     - name: Install environment
       working-directory: ./simulator
-      run: ${{matrix.POETRY_FOLDER}}/bin/poetry install --no-interaction --no-root
+      shell: bash
+      run: python -m poetry install --no-interaction --no-root
       if: steps.cache-deps.outputs.cache-hit != 'true'
     - name: Install root environment
       working-directory: ./simulator
-      run: ${{matrix.POETRY_FOLDER}}/bin/poetry install --no-interaction
-    - name: Build with pyinstaller for ${{matrix.TARGET}}
+      shell: bash
+      run: python -m poetry install --no-interaction
+    - name: Build with pyinstaller for ${{ matrix.TARGET }}
       working-directory: ./simulator
       shell: bash
-      run: ${{matrix.POETRY_FOLDER}}/bin/poetry run ${{matrix.CMD_BUILD}}
+      run: python -m poetry run ${{ matrix.CMD_BUILD }}
     - name: Load Release URL File from release job
       uses: actions/download-artifact@v8
       with:
