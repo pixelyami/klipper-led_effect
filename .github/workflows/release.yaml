@@ -41,7 +41,7 @@ jobs:
         echo "release_version=$RELEASE_VERSION" >> $GITHUB_OUTPUT
 
     - name: Checkout repository
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         fetch-depth: 0
         token: ${{ secrets.GITHUB_TOKEN }}
@@ -74,7 +74,7 @@ jobs:
     - name: Output Release URL File
       run: echo "${{ steps.drafter.outputs.upload_url }}" > release_url.txt
     - name: Save Release URL File for publish
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: release_url
         path: release_url.txt
@@ -106,7 +106,7 @@ jobs:
             ASSET_MIME: application/vnd.microsoft.portable-executable
             POETRY_FOLDER: C:\Users\runneradmin\.local
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
       with:
         ref: ${{ needs.prepare.outputs.release_tag }}
     - name: Set up Python 3.14
@@ -135,7 +135,7 @@ jobs:
       working-directory: ./simulator
       run: ${{matrix.POETRY_FOLDER}}/bin/poetry run ${{matrix.CMD_BUILD}}
     - name: Load Release URL File from release job
-      uses: actions/download-artifact@v5
+      uses: actions/download-artifact@v8
       with:
         name: release_url
     - name: Get Release File Name & Upload URL

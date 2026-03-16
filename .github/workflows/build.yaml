@@ -30,7 +30,7 @@ jobs:
             ASSET_MIME: application/vnd.microsoft.portable-executable
             POETRY_FOLDER: C:\Users\runneradmin\.local
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - name: Set up Python 3.14
       uses: actions/setup-python@v6
       with:
@@ -62,7 +62,7 @@ jobs:
       working-directory: ./simulator
       run: ${{matrix.POETRY_FOLDER}}/bin/poetry run ${{matrix.CMD_BUILD}}
     - name: Upload artifact
-      uses: actions/upload-artifact@v5
+      uses: actions/upload-artifact@v7
       with:
         name: ledeffect-simulator_${{matrix.TARGET}}
         path: simulator/dist/${{matrix.OUT_FILE_NAME}}
